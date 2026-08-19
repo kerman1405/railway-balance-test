@@ -8,27 +8,26 @@ app = Flask(__name__)
 
 RAILWAY_API = "https://backboard.railway.com/graphql/v2"
 
-WORKSPACE_ID = "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
 
-# اطلاعات واقعی Xray
-XRAY_DOMAIN = os.getenv("XRAY_DOMAIN", "YOUR-RAILWAY-DOMAIN")
-XRAY_UUID = os.getenv(
-    "XRAY_UUID",
-    "YOUR-UUID"
-)
+def get_env(name):
+    value = os.getenv(name)
+
+    if not value:
+        raise Exception(f"{name} is not set")
+
+    return value
 
 
 def get_balance():
-    token = os.getenv("RAILWAY_API_TOKEN")
 
-    if not token:
-        raise Exception("RAILWAY_API_TOKEN is not set")
+    token = get_env("RAILWAY_API_TOKEN")
 
     query = """
     query {
       me {
         workspaces {
           id
+          name
           customer {
             remainingUsageCreditBalance
           }
@@ -41,38 +40,50 @@ def get_balance():
         RAILWAY_API,
         headers={
             "Authorization": f"Bearer {token}",
-            "Content-Type": "application/json",
+            "Content-Type": "application/json"
         },
-        json={"query": query},
-        timeout=20,
+        json={
+            "query": query
+        },
+        timeout=20
     )
 
-    response.raise_for_status()
+    data = response.json()
 
-    result = response.json()
+    if "errors" in data:
+        raise Exception(data["errors"])
 
-    if "errors" in result:
-        raise Exception(result["errors"])
+    workspaces = data["data"]["me"]["workspaces"]
 
-    for workspace in result["data"]["me"]["workspaces"]:
-        if workspace["id"] == WORKSPACE_ID:
-            return workspace["customer"]["remainingUsageCreditBalance"]
+    if not workspaces:
+        raise Exception("No workspace found")
 
-    raise Exception("Workspace not found")
+    # اولین Workspace اکانت Railway
+    workspace = workspaces[0]
+
+    customer = workspace.get("customer")
+
+    if not customer:
+        raise Exception("Customer information not found")
+
+    return customer["remainingUsageCreditBalance"]
 
 
 def make_vless_config(balance):
-    name = f"Xray-Railway  | Balance: ${balance:.2f}"
+
+    domain = get_env("XRAY_DOMAIN")
+    uuid = get_env("UUID")
+
+    name = f"Xray Railway | Balance: ${balance:.2f}"
 
     vless = (
-        f"vless://{XRAY_UUID}@{XRAY_DOMAIN}:443"
+        f"vless://{uuid}@{domain}:443"
         f"/?path=%2Fxray"
         f"&security=tls"
         f"&encryption=none"
-        f"&host={XRAY_DOMAIN}"
+        f"&host={domain}"
         f"&type=ws"
-        f"&allowInsecure=0"
-        f"&sni={XRAY_DOMAIN}"
+        f"&sni={domain}"
         f"#{name}"
     )
 
@@ -80,13 +91,16 @@ def make_vless_config(balance):
 
 
 @app.route("/")
-def index():
-    return "Railway Subscription Server is running"
+def home():
+
+    return "Railway Xray Subscription Server is running"
 
 
 @app.route("/balance")
 def balance():
+
     try:
+
         value = get_balance()
 
         return jsonify({
@@ -95,25 +109,21 @@ def balance():
         })
 
     except Exception as e:
+
         return jsonify({
             "error": str(e)
         }), 500
 
 
-@app.route("/sub/<token>")
-def subscription(token):
 
-    if token != XRAY_UUID:
-        return Response(
-            "Invalid subscription token",
-            status=404,
-            mimetype="text/plain"
-        )
+@app.route("/sub")
+def subscription():
 
     try:
-        balance = get_balance()
 
-        vless = make_vless_config(balance)
+        value = get_balance()
+
+        vless = make_vless_config(value)
 
         encoded = base64.b64encode(
             vless.encode("utf-8")
@@ -125,12 +135,15 @@ def subscription(token):
         )
 
     except Exception as e:
+
         return jsonify({
             "error": str(e)
         }), 500
 
 
+
 if __name__ == "__main__":
+
     port = int(os.getenv("PORT", "8080"))
 
     app.run(
