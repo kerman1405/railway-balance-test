@@ -26,8 +26,6 @@ def get_balance():
     query {
       me {
         workspaces {
-          id
-          name
           customer {
             remainingUsageCreditBalance
           }
@@ -58,20 +56,14 @@ def get_balance():
     if not workspaces:
         raise Exception("No workspace found")
 
-    # اولین Workspace اکانت Railway
-    workspace = workspaces[0]
+    balance = workspaces[0]["customer"]["remainingUsageCreditBalance"]
 
-    customer = workspace.get("customer")
-
-    if not customer:
-        raise Exception("Customer information not found")
-
-    return customer["remainingUsageCreditBalance"]
+    return balance
 
 
 def make_vless_config(balance):
 
-    domain = get_env("XRAY_DOMAIN")
+    domain = get_env("RAILWAY_PUBLIC_DOMAIN")
     uuid = get_env("UUID")
 
     name = f"Xray Railway | Balance: ${balance:.2f}"
@@ -92,7 +84,6 @@ def make_vless_config(balance):
 
 @app.route("/")
 def home():
-
     return "Railway Xray Subscription Server is running"
 
 
@@ -100,7 +91,6 @@ def home():
 def balance():
 
     try:
-
         value = get_balance()
 
         return jsonify({
@@ -109,11 +99,9 @@ def balance():
         })
 
     except Exception as e:
-
         return jsonify({
             "error": str(e)
         }), 500
-
 
 
 @app.route("/sub")
@@ -139,7 +127,6 @@ def subscription():
         return jsonify({
             "error": str(e)
         }), 500
-
 
 
 if __name__ == "__main__":
