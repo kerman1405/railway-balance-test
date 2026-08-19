@@ -45,6 +45,14 @@ query {
   me {
     id
     name
+    workspaces {
+      edges {
+        node {
+          id
+          name
+        }
+      }
+    }
   }
 }
 """
