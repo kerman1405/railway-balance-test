@@ -42,20 +42,13 @@ def railway_request(query, variables=None):
 
 TEST_QUERY = """
 query {
-  usage(
-    workspaceId: "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
-    measurements: [CPU_USAGE, MEMORY_USAGE_GB, NETWORK_RX_GB, NETWORK_TX_GB]
-  ) {
-    measurement
-    value
-  }
-
-  estimatedUsage(
-    workspaceId: "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
-    measurements: [CPU_USAGE, MEMORY_USAGE_GB, NETWORK_RX_GB, NETWORK_TX_GB]
-  ) {
-    measurement
-    estimatedValue
+  __schema {
+    queryType {
+      fields {
+        name
+        description
+      }
+    }
   }
 }
 """
