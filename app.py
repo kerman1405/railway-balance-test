@@ -42,13 +42,18 @@ def railway_request(query, variables=None):
 
 TEST_QUERY = """
 query {
-  me {
-    id
-    name
-    workspaces {
-      id
-      name
-    }
+  usage(
+    workspaceId: "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
+  ) {
+    measurement
+    value
+  }
+
+  estimatedUsage(
+    workspaceId: "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
+  ) {
+    measurement
+    estimatedValue
   }
 }
 """
