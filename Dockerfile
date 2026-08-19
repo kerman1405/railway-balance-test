@@ -1,11 +1,14 @@
-FROM python:3.12-slim
+FROM ghcr.io/xtls/xray-core:latest AS xray
 
-WORKDIR /app
+FROM alpine:latest
 
-COPY requirements.txt .
+RUN apk add --no-cache ca-certificates
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --from=xray /usr/local/bin/xray /usr/local/bin/xray
 
-COPY app.py .
+COPY config.json /etc/xray/config.json
+COPY entrypoint.sh /entrypoint.sh
 
-CMD ["python", "app.py"]
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
