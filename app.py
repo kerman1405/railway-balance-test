@@ -10,8 +10,12 @@ RAILWAY_API = "https://backboard.railway.com/graphql/v2"
 
 WORKSPACE_ID = "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
 
-# فعلاً برای تست
-TEST_UUID = "11111111-1111-1111-1111-111111111111"
+# اطلاعات واقعی Xray
+XRAY_DOMAIN = os.getenv("XRAY_DOMAIN", "YOUR-RAILWAY-DOMAIN")
+XRAY_UUID = os.getenv(
+    "XRAY_UUID",
+    "YOUR-UUID"
+)
 
 
 def get_balance():
@@ -50,9 +54,7 @@ def get_balance():
     if "errors" in result:
         raise Exception(result["errors"])
 
-    workspaces = result["data"]["me"]["workspaces"]
-
-    for workspace in workspaces:
+    for workspace in result["data"]["me"]["workspaces"]:
         if workspace["id"] == WORKSPACE_ID:
             return workspace["customer"]["remainingUsageCreditBalance"]
 
@@ -60,21 +62,16 @@ def get_balance():
 
 
 def make_vless_config(balance):
-    # فعلاً کانفیگ نمونه
-    server = "example.com"
-    port = 443
-
-    uuid = TEST_UUID
-
     name = f"XRAY Railway | Balance: ${balance:.2f}"
 
     vless = (
-        f"vless://{uuid}@{server}:{port}"
+        f"vless://{XRAY_UUID}@{XRAY_DOMAIN}:443"
         f"?encryption=none"
         f"&security=tls"
         f"&type=ws"
-        f"&host={server}"
-        f"&path=%2F"
+        f"&host={XRAY_DOMAIN}"
+        f"&sni={XRAY_DOMAIN}"
+        f"&path=%2Fxray"
         f"#{name}"
     )
 
@@ -105,8 +102,7 @@ def balance():
 @app.route("/sub/<token>")
 def subscription(token):
 
-    # فعلاً فقط برای تست
-    if token != TEST_UUID:
+    if token != XRAY_UUID:
         return Response(
             "Invalid subscription token",
             status=404,
