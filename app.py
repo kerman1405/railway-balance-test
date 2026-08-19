@@ -42,11 +42,18 @@ def railway_request(query, variables=None):
 
 TEST_QUERY = """
 query {
-  __schema {
-    queryType {
-      fields {
+  __type(name: "Workspace") {
+    name
+    fields {
+      name
+      description
+      type {
+        kind
         name
-        description
+        ofType {
+          kind
+          name
+        }
       }
     }
   }
