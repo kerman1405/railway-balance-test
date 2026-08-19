@@ -56,26 +56,24 @@ def get_balance():
     if not workspaces:
         raise Exception("No workspace found")
 
-    balance = workspaces[0]["customer"]["remainingUsageCreditBalance"]
-
-    return balance
+    return workspaces[0]["customer"]["remainingUsageCreditBalance"]
 
 
 def make_vless_config(balance):
 
-    domain = get_env("RAILWAY_PUBLIC_DOMAIN")
+    proxy = get_env("XRAY_TCP_PROXY")
     uuid = get_env("UUID")
+
+    host, port = proxy.split(":")
 
     name = f"Xray Railway | Balance: ${balance:.2f}"
 
     vless = (
-        f"vless://{uuid}@{domain}:443"
+        f"vless://{uuid}@{host}:{port}"
         f"/?path=%2Fxray"
-        f"&security=tls"
+        f"&security=none"
         f"&encryption=none"
-        f"&host={domain}"
         f"&type=ws"
-        f"&sni={domain}"
         f"#{name}"
     )
 
