@@ -1,17 +1,37 @@
 import os
+import base64
 import requests
-from flask import Flask, jsonify
+
+from flask import Flask, Response, jsonify
 
 app = Flask(__name__)
 
 RAILWAY_API = "https://backboard.railway.com/graphql/v2"
 
+WORKSPACE_ID = "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
 
-def railway_request(query, variables=None):
+# فعلاً برای تست
+TEST_UUID = "11111111-1111-1111-1111-111111111111"
+
+
+def get_balance():
     token = os.getenv("RAILWAY_API_TOKEN")
 
     if not token:
         raise Exception("RAILWAY_API_TOKEN is not set")
+
+    query = """
+    query {
+      me {
+        workspaces {
+          id
+          customer {
+            remainingUsageCreditBalance
+          }
+        }
+      }
+    }
+    """
 
     response = requests.post(
         RAILWAY_API,
@@ -19,59 +39,98 @@ def railway_request(query, variables=None):
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
         },
-        json={
-            "query": query,
-            "variables": variables or {},
-        },
+        json={"query": query},
         timeout=20,
     )
 
-    try:
-        result = response.json()
-    except Exception:
-        return {
-            "http_status": response.status_code,
-            "raw_response": response.text,
-        }
+    response.raise_for_status()
 
-    return {
-        "http_status": response.status_code,
-        "result": result,
-    }
+    result = response.json()
+
+    if "errors" in result:
+        raise Exception(result["errors"])
+
+    workspaces = result["data"]["me"]["workspaces"]
+
+    for workspace in workspaces:
+        if workspace["id"] == WORKSPACE_ID:
+            return workspace["customer"]["remainingUsageCreditBalance"]
+
+    raise Exception("Workspace not found")
 
 
-TEST_QUERY = """
-query {
-  me {
-    workspaces {
-      id
-      name
-      customer {
-        id
-        creditBalance
-        remainingUsageCreditBalance
-        currentUsage
-        appliedCredits
-        isTrialing
-        trialDaysRemaining
-        isUsageSubscriber
-      }
-    }
-  }
-}
-"""
+def make_vless_config(balance):
+    # فعلاً کانفیگ نمونه
+    server = "example.com"
+    port = 443
+
+    uuid = TEST_UUID
+
+    name = f"XRAY Railway | Balance: ${balance:.2f}"
+
+    vless = (
+        f"vless://{uuid}@{server}:{port}"
+        f"?encryption=none"
+        f"&security=tls"
+        f"&type=ws"
+        f"&host={server}"
+        f"&path=%2F"
+        f"#{name}"
+    )
+
+    return vless
 
 
 @app.route("/")
 def index():
-    return "Railway Balance Test is running"
+    return "Railway Subscription Server is running"
 
 
-@app.route("/test")
-def test():
-    return jsonify(
-        railway_request(TEST_QUERY)
-    )
+@app.route("/balance")
+def balance():
+    try:
+        value = get_balance()
+
+        return jsonify({
+            "balance": round(value, 4),
+            "display": f"${value:.2f}"
+        })
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
+
+
+@app.route("/sub/<token>")
+def subscription(token):
+
+    # فعلاً فقط برای تست
+    if token != TEST_UUID:
+        return Response(
+            "Invalid subscription token",
+            status=404,
+            mimetype="text/plain"
+        )
+
+    try:
+        balance = get_balance()
+
+        vless = make_vless_config(balance)
+
+        encoded = base64.b64encode(
+            vless.encode("utf-8")
+        ).decode("utf-8")
+
+        return Response(
+            encoded,
+            mimetype="text/plain"
+        )
+
+    except Exception as e:
+        return jsonify({
+            "error": str(e)
+        }), 500
 
 
 if __name__ == "__main__":
