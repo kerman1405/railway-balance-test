@@ -13,7 +13,7 @@ cat > /tmp/config.json <<EOF
   "inbounds": [
     {
       "listen": "0.0.0.0",
-      "port": ${PORT},
+      "port": 9000,
       "protocol": "vless",
       "settings": {
         "clients": [
@@ -35,10 +35,6 @@ cat > /tmp/config.json <<EOF
     {
       "protocol": "freedom",
       "tag": "direct"
-    },
-    {
-      "protocol": "blackhole",
-      "tag": "block"
     }
   ]
 }
