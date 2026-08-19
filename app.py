@@ -44,16 +44,10 @@ TEST_QUERY = """
 query {
   usage(
     workspaceId: "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
+    measurements: [CPU]
   ) {
     measurement
     value
-  }
-
-  estimatedUsage(
-    workspaceId: "d3fc859b-4843-4b32-ad35-10eef9a3cbca"
-  ) {
-    measurement
-    estimatedValue
   }
 }
 """
