@@ -42,7 +42,7 @@ def railway_request(query, variables=None):
 
 TEST_QUERY = """
 query {
-  __type(name: "Workspace") {
+  __type(name: "Customer") {
     name
     fields {
       name
