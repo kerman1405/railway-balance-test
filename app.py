@@ -42,18 +42,19 @@ def railway_request(query, variables=None):
 
 TEST_QUERY = """
 query {
-  __type(name: "Customer") {
-    name
-    fields {
+  me {
+    workspaces {
+      id
       name
-      description
-      type {
-        kind
-        name
-        ofType {
-          kind
-          name
-        }
+      customer {
+        id
+        creditBalance
+        remainingUsageCreditBalance
+        currentUsage
+        appliedCredits
+        isTrialing
+        trialDaysRemaining
+        isUsageSubscriber
       }
     }
   }
