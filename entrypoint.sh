@@ -44,4 +44,8 @@ cat > /tmp/config.json <<EOF
 }
 EOF
 
-exec /usr/local/bin/xray run -config /tmp/config.json
+
+/usr/local/bin/xray run -config /tmp/config.json &
+
+
+exec python3 /app/app.py
