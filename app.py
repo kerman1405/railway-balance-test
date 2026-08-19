@@ -62,16 +62,17 @@ def get_balance():
 
 
 def make_vless_config(balance):
-    name = f"XRAY Railway | Balance: ${balance:.2f}"
+    name = f"Xray-Railway  | Balance: ${balance:.2f}"
 
     vless = (
         f"vless://{XRAY_UUID}@{XRAY_DOMAIN}:443"
-        f"?encryption=none"
+        f"/?path=%2Fxray"
         f"&security=tls"
-        f"&type=ws"
+        f"&encryption=none"
         f"&host={XRAY_DOMAIN}"
+        f"&type=ws"
+        f"&allowInsecure=0"
         f"&sni={XRAY_DOMAIN}"
-        f"&path=%2Fxray"
         f"#{name}"
     )
 
